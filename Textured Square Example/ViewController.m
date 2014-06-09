@@ -80,7 +80,6 @@ typedef struct {
     [texture copyFromPixels: (uint8_t[]){
         255,0,0,255,    0,255,0,255,
         0,0,255,255,    0,0,0,255
-        
     } rowBytes: 8 imageBytes: 16 toSlice: 0 mipmapLevel: 0 origin: MTLOriginMake(0, 0, 0) size: MTLSizeMake(2, 2, 0)];
     
     
