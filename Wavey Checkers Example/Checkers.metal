@@ -28,9 +28,9 @@ vertex VertexOut CheckerVertex(VertexData Vertices [[stage_in]])
     return out;
 }
 
-fragment half4 CheckerFragment(VertexOut in [[stage_in]], const global float2 *RectScale [[buffer(0)]])
+fragment half4 CheckerFragment(VertexOut in [[stage_in]], constant float2 &RectScale [[buffer(0)]])
 {
-    float2 pos = step(fract(in.posCoord / *RectScale), 0.5);
+    float2 pos = step(fract(in.posCoord / RectScale), 0.5);
     pos -= pos.x * pos.y;
     
     half3 check = pos.x + pos.y;
