@@ -29,12 +29,12 @@ vertex VertexOut ColourVertex(VertexData Vertices [[stage_in]])
     return out;
 }
 
-fragment half4 ColourFragment(VertexOut in [[stage_in]], texture2d<half> Texture [[texture(0)]], const global float *Time [[buffer(0)]])
+fragment half4 ColourFragment(VertexOut in [[stage_in]], texture2d<half> Texture [[texture(0)]], constant float &Time [[buffer(0)]])
 {
     constexpr sampler s(address::repeat);
     
     float2 texCoord = in.texCoord;
-    texCoord += sin((texCoord.yx + *Time) * 6.58) * 0.04;
+    texCoord += sin((texCoord.yx + Time) * 6.58) * 0.04;
     
     return Texture.sample(s, texCoord);
 }
