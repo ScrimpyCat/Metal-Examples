@@ -9,9 +9,9 @@ To set it up, simply create a single view project (and have its view controller 
 ---
 
 Order of examples:
- 1. Bare Minimum Example
- 2. Red Square Example
- 3. Textured Square Example
- 4. Textured Square Example 2
- 5. Wavey Checkers Example
- 6. Wavey Checkers Compute Example
+ 1. [Bare Minimum Example](Bare Minimum Example)
+ 2. [Red Square Example](Red Square Example)
+ 3. [Textured Square Example](Textured Square Example)
+ 4. [Textured Square Example 2](Textured Square Example 2)
+ 5. [Wavey Checkers Example](Wavey Checkers Example)
+ 6. [Wavey Checkers Compute Example](Wavey Checkers Compute Example)
