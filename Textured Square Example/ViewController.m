@@ -35,7 +35,7 @@ typedef struct {
     id <MTLLibrary>defaultLibrary;
     CAMetalLayer *renderLayer;
     
-    id <MTLFramebuffer>framebuffer;
+    MTLRenderPassDescriptor *renderPass;
     id <CAMetalDrawable>drawable;
     
     CADisplayLink *displayLink;
@@ -60,7 +60,7 @@ typedef struct {
     
     MTLRenderPipelineDescriptor *ColourPipelineDescriptor = [MTLRenderPipelineDescriptor new];
     ColourPipelineDescriptor.label = @"ColourPipeline";
-    [ColourPipelineDescriptor setPixelFormat: MTLPixelFormatBGRA8Unorm atIndex: MTLFramebufferAttachmentIndexColor0];
+    ColourPipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
     [ColourPipelineDescriptor setVertexFunction: [defaultLibrary newFunctionWithName: @"ColourVertex"]];
     [ColourPipelineDescriptor setFragmentFunction: [defaultLibrary newFunctionWithName: @"ColourFragment"]];
     colourPipeline = [device newRenderPipelineStateWithDescriptor: ColourPipelineDescriptor error: NULL];
@@ -77,10 +77,10 @@ typedef struct {
     
     MTLTextureDescriptor *TextureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat: MTLPixelFormatRGBA8Unorm width: 2 height: 2 mipmapped: NO];
     texture = [device newTextureWithDescriptor: TextureDescriptor];
-    [texture copyFromPixels: (uint8_t[]){
+    [texture replaceRegion: MTLTextureRegionMake2D(0, 0, 2, 2) mipmapLevel: 0 withBytes: (uint8_t[]){
         255,0,0,255,    0,255,0,255,
         0,0,255,255,    0,0,0,255
-    } rowBytes: 8 imageBytes: 16 toSlice: 0 mipmapLevel: 0 origin: MTLOriginMake(0, 0, 0) size: MTLSizeMake(2, 2, 0)];
+    } bytesPerRow: 8];
     
     
     renderLayer = [CAMetalLayer layer];
@@ -112,7 +112,7 @@ typedef struct {
     id <MTLCommandBuffer>CommandBuffer = [commandQueue commandBuffer];
     CommandBuffer.label = @"RenderFrameCommandBuffer";
     
-    id <MTLRenderCommandEncoder>RenderCommand = [CommandBuffer renderCommandEncoderWithFramebuffer: [self currentFramebuffer]];
+    id <MTLRenderCommandEncoder>RenderCommand = [CommandBuffer renderCommandEncoderWithDescriptor: [self currentFramebuffer]];
     [RenderCommand pushDebugGroup: @"Draw square"];
     [RenderCommand setViewport: (MTLViewport){ 0.0, 0.0, renderLayer.drawableSize.width, renderLayer.drawableSize.height, 0.0, 1.0 }];
     [RenderCommand setRenderPipelineState: colourPipeline];
@@ -124,33 +124,29 @@ typedef struct {
     [RenderCommand popDebugGroup];
     [RenderCommand endEncoding];
     
-    [CommandBuffer addScheduledPresent: [self currentDrawable]];
+    [CommandBuffer presentDrawable: [self currentDrawable]];
     [CommandBuffer commit];
     
-    framebuffer = nil;
+    renderPass = nil;
     drawable = nil;
 }
 
--(id<MTLFramebuffer>) currentFramebuffer
+-(MTLRenderPassDescriptor*) currentFramebuffer
 {
-    if (!framebuffer)
+    if (!renderPass)
     {
         id <CAMetalDrawable>Drawable = [self currentDrawable];
         if (Drawable)
         {
-            MTLAttachmentDescriptor *ColourAttachment = [MTLAttachmentDescriptor attachmentDescriptorWithTexture: Drawable.texture];
-            ColourAttachment.loadAction = MTLLoadActionClear;
-            ColourAttachment.clearValue = MTLClearValueMakeColor(0.0, 0.0, 1.0, 1.0);
-            ColourAttachment.storeAction = MTLStoreActionStore;
-            
-            MTLFramebufferDescriptor *Descriptor = [MTLFramebufferDescriptor framebufferDescriptorWithColorAttachment: ColourAttachment];
-            
-            framebuffer = [device newFramebufferWithDescriptor: Descriptor];
-            framebuffer.label = @"DisplayedFramebuffer";
+            renderPass = [MTLRenderPassDescriptor renderPassDescriptor];
+            renderPass.colorAttachments[0].texture = Drawable.texture;
+            renderPass.colorAttachments[0].loadAction = MTLLoadActionClear;
+            renderPass.colorAttachments[0].clearValue = MTLClearValueMakeColor(0.0, 0.0, 1.0, 1.0);
+            renderPass.colorAttachments[0].storeAction = MTLStoreActionStore;
         }
     }
     
-    return framebuffer;
+    return renderPass;
 }
 
 -(id<CAMetalDrawable>) currentDrawable

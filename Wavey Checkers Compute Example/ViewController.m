@@ -44,7 +44,7 @@ typedef struct {
     id <MTLLibrary>defaultLibrary;
     CAMetalLayer *renderLayer;
     
-    id <MTLFramebuffer>framebuffer;
+    MTLRenderPassDescriptor *renderPass;
     id <CAMetalDrawable>drawable;
     
     CADisplayLink *displayLink;
@@ -76,12 +76,12 @@ typedef struct {
     MTLVertexDescriptor *RectDescriptor = [MTLVertexDescriptor vertexDescriptor];
     [RectDescriptor setVertexFormat: MTLVertexFormatFloat2 offset: offsetof(VertexData, position) vertexBufferIndex: 0 atAttributeIndex: 0];
     [RectDescriptor setVertexFormat: MTLVertexFormatFloat2 offset: offsetof(VertexData, texCoord) vertexBufferIndex: 0 atAttributeIndex: 1];
-    [RectDescriptor setStride: sizeof(VertexData) instanceStepRate: 0 atVertexBufferIndex: 0];
+    [RectDescriptor setStride: sizeof(VertexData) stepFunction: MTLVertexStepFunctionPerVertex stepRate: 1 atVertexBufferIndex: 0];
     
     
     MTLRenderPipelineDescriptor *ColourPipelineDescriptor = [MTLRenderPipelineDescriptor new];
     ColourPipelineDescriptor.label = @"ColourPipeline";
-    [ColourPipelineDescriptor setPixelFormat: MTLPixelFormatBGRA8Unorm atIndex: MTLFramebufferAttachmentIndexColor0];
+    ColourPipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
     [ColourPipelineDescriptor setVertexFunction: [defaultLibrary newFunctionWithName: @"ColourVertex"]];
     [ColourPipelineDescriptor setFragmentFunction: [defaultLibrary newFunctionWithName: @"ColourFragment"]];
     ColourPipelineDescriptor.vertexDescriptor = RectDescriptor;
@@ -168,7 +168,7 @@ typedef struct {
     id <MTLCommandBuffer>CommandBuffer = [commandQueue commandBuffer];
     CommandBuffer.label = @"RenderFrameCommandBuffer";
     
-    id <MTLRenderCommandEncoder>RenderCommand = [CommandBuffer renderCommandEncoderWithFramebuffer: [self currentFramebuffer]];
+    id <MTLRenderCommandEncoder>RenderCommand = [CommandBuffer renderCommandEncoderWithDescriptor: [self currentFramebuffer]];
     [RenderCommand pushDebugGroup: @"Apply wave"];
     [RenderCommand setViewport: (MTLViewport){ 0.0, 0.0, renderLayer.drawableSize.width, renderLayer.drawableSize.height, 0.0, 1.0 }];
     [RenderCommand setRenderPipelineState: colourPipeline];
@@ -180,7 +180,7 @@ typedef struct {
     [RenderCommand popDebugGroup];
     [RenderCommand endEncoding];
     
-    [CommandBuffer addScheduledPresent: [self currentDrawable]];
+    [CommandBuffer presentDrawable: [self currentDrawable]];
     
     __block dispatch_semaphore_t Semaphore = resourceSemaphore;
     [CommandBuffer addCompletedHandler: ^(id <MTLCommandBuffer>commandBuffer){
@@ -188,30 +188,26 @@ typedef struct {
     }];
     [CommandBuffer commit];
     
-    framebuffer = nil;
+    renderPass = nil;
     drawable = nil;
 }
 
--(id<MTLFramebuffer>) currentFramebuffer
+-(MTLRenderPassDescriptor*) currentFramebuffer
 {
-    if (!framebuffer)
+    if (!renderPass)
     {
         id <CAMetalDrawable>Drawable = [self currentDrawable];
         if (Drawable)
         {
-            MTLAttachmentDescriptor *ColourAttachment = [MTLAttachmentDescriptor attachmentDescriptorWithTexture: Drawable.texture];
-            ColourAttachment.loadAction = MTLLoadActionClear;
-            ColourAttachment.clearValue = MTLClearValueMakeColor(0.0, 0.0, 1.0, 1.0);
-            ColourAttachment.storeAction = MTLStoreActionStore;
-            
-            MTLFramebufferDescriptor *Descriptor = [MTLFramebufferDescriptor framebufferDescriptorWithColorAttachment: ColourAttachment];
-            
-            framebuffer = [device newFramebufferWithDescriptor: Descriptor];
-            framebuffer.label = @"DisplayedFramebuffer";
+            renderPass = [MTLRenderPassDescriptor renderPassDescriptor];
+            renderPass.colorAttachments[0].texture = Drawable.texture;
+            renderPass.colorAttachments[0].loadAction = MTLLoadActionClear;
+            renderPass.colorAttachments[0].clearValue = MTLClearValueMakeColor(0.0, 0.0, 1.0, 1.0);
+            renderPass.colorAttachments[0].storeAction = MTLStoreActionStore;
         }
     }
     
-    return framebuffer;
+    return renderPass;
 }
 
 -(id<CAMetalDrawable>) currentDrawable

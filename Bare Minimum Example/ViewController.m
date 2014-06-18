@@ -16,7 +16,7 @@
 #endif
 
 @interface ViewController ()
-            
+
 
 @end
 
@@ -26,7 +26,7 @@
     id <MTLCommandQueue>commandQueue;
     CAMetalLayer *renderLayer;
     
-    id <MTLFramebuffer>framebuffer;
+    MTLRenderPassDescriptor *renderPass;
     id <CAMetalDrawable>drawable;
     
     CADisplayLink *displayLink;
@@ -70,36 +70,32 @@
     id <MTLCommandBuffer>CommandBuffer = [commandQueue commandBuffer];
     CommandBuffer.label = @"RenderFrameCommandBuffer";
     
-    id <MTLRenderCommandEncoder>RenderCommand = [CommandBuffer renderCommandEncoderWithFramebuffer: [self currentFramebuffer]];
+    id <MTLRenderCommandEncoder>RenderCommand = [CommandBuffer renderCommandEncoderWithDescriptor: [self currentFramebuffer]];
     [RenderCommand endEncoding];
     
-    [CommandBuffer addScheduledPresent: [self currentDrawable]];
+    [CommandBuffer presentDrawable: [self currentDrawable]];
     [CommandBuffer commit];
     
-    framebuffer = nil;
+    renderPass = nil;
     drawable = nil;
 }
 
--(id<MTLFramebuffer>) currentFramebuffer
+-(MTLRenderPassDescriptor*) currentFramebuffer
 {
-    if (!framebuffer)
+    if (!renderPass)
     {
         id <CAMetalDrawable>Drawable = [self currentDrawable];
         if (Drawable)
         {
-            MTLAttachmentDescriptor *ColourAttachment = [MTLAttachmentDescriptor attachmentDescriptorWithTexture: Drawable.texture];
-            ColourAttachment.loadAction = MTLLoadActionClear;
-            ColourAttachment.clearValue = MTLClearValueMakeColor(0.0, 0.0, 1.0, 1.0);
-            ColourAttachment.storeAction = MTLStoreActionStore;
-            
-            MTLFramebufferDescriptor *Descriptor = [MTLFramebufferDescriptor framebufferDescriptorWithColorAttachment: ColourAttachment];
-            
-            framebuffer = [device newFramebufferWithDescriptor: Descriptor];
-            framebuffer.label = @"DisplayedFramebuffer";
+            renderPass = [MTLRenderPassDescriptor renderPassDescriptor];
+            renderPass.colorAttachments[0].texture = Drawable.texture;
+            renderPass.colorAttachments[0].loadAction = MTLLoadActionClear;
+            renderPass.colorAttachments[0].clearValue = MTLClearValueMakeColor(0.0, 0.0, 1.0, 1.0);
+            renderPass.colorAttachments[0].storeAction = MTLStoreActionStore;
         }
     }
     
-    return framebuffer;
+    return renderPass;
 }
 
 -(id<CAMetalDrawable>) currentDrawable
