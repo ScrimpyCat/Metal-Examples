@@ -59,9 +59,25 @@ typedef struct {
     
     
     MTLVertexDescriptor *RectDescriptor = [MTLVertexDescriptor vertexDescriptor];
-    [RectDescriptor setVertexFormat: MTLVertexFormatFloat2 offset: offsetof(VertexData, position) vertexBufferIndex: 0 atAttributeIndex: 0];
-    [RectDescriptor setVertexFormat: MTLVertexFormatFloat2 offset: offsetof(VertexData, texCoord) vertexBufferIndex: 0 atAttributeIndex: 1];
-    [RectDescriptor setStride: sizeof(VertexData) stepFunction: MTLVertexStepFunctionPerVertex stepRate: 1 atVertexBufferIndex: 0];
+    
+    MTLVertexAttributeDescriptor *PositionDescriptor = [MTLVertexAttributeDescriptor new];
+    PositionDescriptor.format = MTLVertexFormatFloat2;
+    PositionDescriptor.offset = offsetof(VertexData, position);
+    PositionDescriptor.bufferIndex = 0;
+    [RectDescriptor.attributes setObject: PositionDescriptor atIndexedSubscript: 0];
+    
+    MTLVertexAttributeDescriptor *TexCoordDescriptor = [MTLVertexAttributeDescriptor new];
+    TexCoordDescriptor.format = MTLVertexFormatFloat2;
+    TexCoordDescriptor.offset = offsetof(VertexData, texCoord);
+    TexCoordDescriptor.bufferIndex = 0;
+    [RectDescriptor.attributes setObject: TexCoordDescriptor atIndexedSubscript: 1];
+    
+    MTLVertexBufferLayoutDescriptor *LayoutDescriptor = [MTLVertexBufferLayoutDescriptor new];
+    LayoutDescriptor.stride = sizeof(VertexData);
+    LayoutDescriptor.stepFunction = MTLVertexStepFunctionPerVertex;
+    LayoutDescriptor.stepRate = 1;
+    [RectDescriptor.layouts setObject: LayoutDescriptor atIndexedSubscript: 0];
+    
     
     MTLRenderPipelineDescriptor *ColourPipelineDescriptor = [MTLRenderPipelineDescriptor new];
     ColourPipelineDescriptor.label = @"ColourPipeline";
@@ -83,7 +99,7 @@ typedef struct {
     
     MTLTextureDescriptor *TextureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat: MTLPixelFormatRGBA8Unorm width: 2 height: 2 mipmapped: NO];
     texture = [device newTextureWithDescriptor: TextureDescriptor];
-    [texture replaceRegion: MTLTextureRegionMake2D(0, 0, 2, 2) mipmapLevel: 0 withBytes: (uint8_t[]){
+    [texture replaceRegion: MTLRegionMake2D(0, 0, 2, 2) mipmapLevel: 0 withBytes: (uint8_t[]){
         255,0,0,255,    0,255,0,255,
         0,0,255,255,    0,0,0,255
     } bytesPerRow: 8];
@@ -147,7 +163,7 @@ typedef struct {
             renderPass = [MTLRenderPassDescriptor renderPassDescriptor];
             renderPass.colorAttachments[0].texture = Drawable.texture;
             renderPass.colorAttachments[0].loadAction = MTLLoadActionClear;
-            renderPass.colorAttachments[0].clearValue = MTLClearValueMakeColor(0.0, 0.0, 1.0, 1.0);
+            renderPass.colorAttachments[0].clearColor= MTLClearColorMake(0.0, 0.0, 1.0, 1.0);
             renderPass.colorAttachments[0].storeAction = MTLStoreActionStore;
         }
     }
@@ -157,7 +173,7 @@ typedef struct {
 
 -(id<CAMetalDrawable>) currentDrawable
 {
-    while (!drawable) drawable = [renderLayer newDrawable];
+    while (!drawable) drawable = [renderLayer nextDrawable];
     return drawable;
 }
 

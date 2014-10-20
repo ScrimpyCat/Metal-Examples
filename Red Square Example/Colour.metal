@@ -19,7 +19,7 @@ typedef struct {
     float4 position [[position]];
 } VertexOut;
 
-vertex VertexOut ColourVertex(const global VertexData *Vertices [[buffer(0)]], constant float4x4 &ModelViewProjection [[buffer(1)]], const uint index [[vertex_id]])
+vertex VertexOut ColourVertex(const device VertexData *Vertices [[buffer(0)]], constant float4x4 &ModelViewProjection [[buffer(1)]], const uint index [[vertex_id]])
 {
     VertexOut out;
     out.position = ModelViewProjection * float4(Vertices[index].position, 0.0, 1.0);

@@ -24,7 +24,7 @@ typedef struct {
 } __attribute__((packed)) VertexData;
 
 @interface ViewController ()
-            
+
 
 @end
 
@@ -69,7 +69,7 @@ typedef struct {
     const CGSize Size = self.view.bounds.size;
     GLKMatrix4 Mat = GLKMatrix4MakeOrtho(0.0f, Size.width, 0.0f, Size.height, -1.0f, 1.0f);
     modelViewProjection = [device newBufferWithBytes: &Mat length: sizeof(GLKMatrix4) options: MTLResourceOptionCPUCacheModeDefault];
-
+    
     
     rect = [device newBufferWithBytes: &(VertexData[4]){ { { 0.0f, 0.0f }, { 0.0f, 0.0f } }, { { 100.0f, 0.0f }, { 1.0f, 0.0f } }, { { 0.0f, 100.0f }, { 0.0f, 1.0f } }, { { 100.0f, 100.0f }, { 1.0f, 1.0f } } } length: sizeof(VertexData[4]) options: MTLResourceOptionCPUCacheModeDefault];
     rect.label = @"Square";
@@ -77,7 +77,7 @@ typedef struct {
     
     MTLTextureDescriptor *TextureDescriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat: MTLPixelFormatRGBA8Unorm width: 2 height: 2 mipmapped: NO];
     texture = [device newTextureWithDescriptor: TextureDescriptor];
-    [texture replaceRegion: MTLTextureRegionMake2D(0, 0, 2, 2) mipmapLevel: 0 withBytes: (uint8_t[]){
+    [texture replaceRegion: MTLRegionMake2D(0, 0, 2, 2) mipmapLevel: 0 withBytes: (uint8_t[]){
         255,0,0,255,    0,255,0,255,
         0,0,255,255,    0,0,0,255
     } bytesPerRow: 8];
@@ -141,7 +141,7 @@ typedef struct {
             renderPass = [MTLRenderPassDescriptor renderPassDescriptor];
             renderPass.colorAttachments[0].texture = Drawable.texture;
             renderPass.colorAttachments[0].loadAction = MTLLoadActionClear;
-            renderPass.colorAttachments[0].clearValue = MTLClearValueMakeColor(0.0, 0.0, 1.0, 1.0);
+            renderPass.colorAttachments[0].clearColor = MTLClearColorMake(0.0, 0.0, 1.0, 1.0);
             renderPass.colorAttachments[0].storeAction = MTLStoreActionStore;
         }
     }
@@ -151,7 +151,7 @@ typedef struct {
 
 -(id<CAMetalDrawable>) currentDrawable
 {
-    while (!drawable) drawable = [renderLayer newDrawable];
+    while (!drawable) drawable = [renderLayer nextDrawable];
     return drawable;
 }
 

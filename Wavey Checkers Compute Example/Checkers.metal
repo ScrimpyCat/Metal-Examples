@@ -11,7 +11,7 @@
 using namespace metal;
 
 
-kernel void CheckerKernel(texture2d<float, access::write> Tex [[texture(0)]], constant float2 &RectScale [[buffer(0)]], const uint2 Index [[global_id]])
+kernel void CheckerKernel(texture2d<half, access::write> Tex [[texture(0)]], constant float2 &RectScale [[buffer(0)]], const uint2 Index [[thread_position_in_grid]])
 {
     const float4 texSize = float2(Tex.get_width(), Tex.get_height()).xyxy, scale = RectScale.xyxy;
     const uint CountX = 4;

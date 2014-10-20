@@ -74,9 +74,24 @@ typedef struct {
     
     
     MTLVertexDescriptor *RectDescriptor = [MTLVertexDescriptor vertexDescriptor];
-    [RectDescriptor setVertexFormat: MTLVertexFormatFloat2 offset: offsetof(VertexData, position) vertexBufferIndex: 0 atAttributeIndex: 0];
-    [RectDescriptor setVertexFormat: MTLVertexFormatFloat2 offset: offsetof(VertexData, texCoord) vertexBufferIndex: 0 atAttributeIndex: 1];
-    [RectDescriptor setStride: sizeof(VertexData) stepFunction: MTLVertexStepFunctionPerVertex stepRate: 1 atVertexBufferIndex: 0];
+    
+    MTLVertexAttributeDescriptor *PositionDescriptor = [MTLVertexAttributeDescriptor new];
+    PositionDescriptor.format = MTLVertexFormatFloat2;
+    PositionDescriptor.offset = offsetof(VertexData, position);
+    PositionDescriptor.bufferIndex = 0;
+    [RectDescriptor.attributes setObject: PositionDescriptor atIndexedSubscript: 0];
+    
+    MTLVertexAttributeDescriptor *TexCoordDescriptor = [MTLVertexAttributeDescriptor new];
+    TexCoordDescriptor.format = MTLVertexFormatFloat2;
+    TexCoordDescriptor.offset = offsetof(VertexData, texCoord);
+    TexCoordDescriptor.bufferIndex = 0;
+    [RectDescriptor.attributes setObject: TexCoordDescriptor atIndexedSubscript: 1];
+    
+    MTLVertexBufferLayoutDescriptor *LayoutDescriptor = [MTLVertexBufferLayoutDescriptor new];
+    LayoutDescriptor.stride = sizeof(VertexData);
+    LayoutDescriptor.stepFunction = MTLVertexStepFunctionPerVertex;
+    LayoutDescriptor.stepRate = 1;
+    [RectDescriptor.layouts setObject: LayoutDescriptor atIndexedSubscript: 0];
     
     
     MTLRenderPipelineDescriptor *ColourPipelineDescriptor = [MTLRenderPipelineDescriptor new];
@@ -144,7 +159,7 @@ typedef struct {
     [ComputeCommand setComputePipelineState: checkerPipeline];
     [ComputeCommand setBuffer: data offset: offsetof(BufferData, rectScale) atIndex: 0];
     [ComputeCommand setTexture: checkerTexture atIndex: 0];
-    [ComputeCommand executeKernelWithWorkGroupSize: WorkGroupSize workGroupCount: WorkGroupCount];
+    [ComputeCommand dispatchThreadgroups: WorkGroupCount threadsPerThreadgroup: WorkGroupSize];
     
     [ComputeCommand popDebugGroup];
     [ComputeCommand endEncoding];
@@ -211,7 +226,7 @@ typedef struct {
 
 -(id<CAMetalDrawable>) currentDrawable
 {
-    while (!drawable) drawable = [renderLayer newDrawable];
+    while (!drawable) drawable = [renderLayer nextDrawable];
     return drawable;
 }
 

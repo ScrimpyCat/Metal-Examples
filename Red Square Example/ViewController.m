@@ -130,7 +130,7 @@ typedef struct {
             renderPass = [MTLRenderPassDescriptor renderPassDescriptor];
             renderPass.colorAttachments[0].texture = Drawable.texture;
             renderPass.colorAttachments[0].loadAction = MTLLoadActionClear;
-            renderPass.colorAttachments[0].clearValue = MTLClearValueMakeColor(0.0, 0.0, 1.0, 1.0);
+            renderPass.colorAttachments[0].clearColor = MTLClearColorMake(0.0, 0.0, 1.0, 1.0);
             renderPass.colorAttachments[0].storeAction = MTLStoreActionStore;
         }
     }
@@ -140,7 +140,7 @@ typedef struct {
 
 -(id<CAMetalDrawable>) currentDrawable
 {
-    while (!drawable) drawable = [renderLayer newDrawable];
+    while (!drawable) drawable = [renderLayer nextDrawable];
     return drawable;
 }
 
